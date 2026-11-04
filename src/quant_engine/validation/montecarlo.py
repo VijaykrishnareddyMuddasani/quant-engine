@@ -106,9 +106,10 @@ def resample_trades(
     with_start = np.concatenate([np.ones((n_paths, 1)), equity], axis=1)
     peak = np.maximum.accumulate(with_start, axis=1)
     drawdown = 100.0 * (1.0 - with_start / peak)
+    # np.asarray pins the dtype for type checkers: NumPy versions differ in what they infer here.
     return MonteCarloReport(
-        final_return_pct=100.0 * (equity[:, -1] - 1.0),
-        max_drawdown_pct=drawdown.max(axis=1),
+        final_return_pct=np.asarray(100.0 * (equity[:, -1] - 1.0), dtype=np.float64),
+        max_drawdown_pct=np.asarray(drawdown.max(axis=1), dtype=np.float64),
         longest_losing_streak=longest_run(account < 0),
         ruin_drawdown_pct=ruin_drawdown_pct,
     )
