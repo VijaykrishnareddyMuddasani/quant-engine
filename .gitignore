@@ -1,0 +1,41 @@
+# Secrets - never in this repository
+.env
+.env.*
+!.env.example
+*.pem
+token.json
+credentials.json
+
+# Private strategy code and its settings live in a separate private repository.
+# These entries are a second line of defence, not the plan.
+private/
+private_*/
+*.private.*
+
+# Market data - vendor data is not redistributable (top-level folder only:
+# a bare "data/" would also hide the src/quant_engine/data package)
+/data/
+*.parquet
+*.csv.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
