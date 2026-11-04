@@ -4,14 +4,29 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Sequence
+from pathlib import Path
 
 import pandas as pd
 
-from quant_engine.core import IST, Bar, Fill
+from quant_engine.core import IST, Bar, Fill, Order, Side, SimulatedClock
+from quant_engine.data import ExchangeCalendar
+from quant_engine.execution import (
+    BarQuotes,
+    ChasePolicy,
+    LiveConfig,
+    LiveRunner,
+    OrderExecutor,
+    ReplayFeed,
+    SimulatedBroker,
+    StateStore,
+)
 from quant_engine.strategy import Strategy, StrategyContext
 
 MONDAY = dt.date(2026, 1, 5)
 TUESDAY = dt.date(2026, 1, 6)
+SYMBOL = "NFO:FUT"
+CALENDAR = ExchangeCalendar.nse()
+FAST_CHASE = ChasePolicy(wait_s=0.5, poll_s=0.1, max_reprices=2)
 
 BarFactory = Callable[..., pd.DataFrame]
 BarAction = Callable[[Bar, StrategyContext], object]
@@ -65,3 +80,40 @@ class Scripted(Strategy):
         self.fills.append(fill)
         if self.on_fill_do is not None:
             self.on_fill_do(fill, ctx)
+
+
+def buy(qty: float) -> BarAction:
+    return lambda bar, ctx: ctx.submit(Order.market(Side.BUY, qty))
+
+
+def until(bars: pd.DataFrame) -> pd.Timestamp:
+    """Just after the last bar becomes available."""
+    return pd.Timestamp(bars["available_at"].iloc[-1]) + pd.Timedelta(seconds=1)
+
+
+def live_book(
+    tmp_path: Path,
+    strategy: Strategy,
+    bars: pd.DataFrame,
+    *,
+    broker: SimulatedBroker | None = None,
+    backstop_pct: float | None = None,
+) -> tuple[LiveRunner, SimulatedBroker, SimulatedClock, StateStore]:
+    """A live runner replaying ``bars`` against a simulated broker quoting their closes."""
+    clock = SimulatedClock(bars.index[0].to_pydatetime())
+    feed = ReplayFeed(bars)
+    quotes = BarQuotes(feed, clock, SYMBOL, half_spread=0.05)
+    broker = broker or SimulatedBroker(quotes)
+    broker.quotes = quotes
+    state = StateStore(tmp_path / "book.json", clock)
+    runner = LiveRunner(
+        strategy,
+        feed,
+        broker,
+        OrderExecutor(broker, clock, FAST_CHASE),
+        CALENDAR,
+        state,
+        LiveConfig(SYMBOL, poll_s=1.0, backstop_pct=backstop_pct),
+        clock,
+    )
+    return runner, broker, clock, state
