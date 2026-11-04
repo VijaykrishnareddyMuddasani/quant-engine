@@ -1,0 +1,18 @@
+# A textbook moving-average crossover on a synthetic index, 15-minute bars, flat every evening.
+#   qe-backtest examples/ma_crossover.toml
+# To run a private strategy instead, install its package and point `spec` at it from a config
+# file that stays with the private code.
+
+[data]
+synthetic = { start = 2026-01-01, end = 2026-06-30, seed = 7 }
+bar_minutes = 15
+
+[strategy]
+spec = "quant_engine.strategy.examples:MovingAverageCrossover"
+params = { fast = 8, slow = 21, quantity = 50 }
+
+[backtest]
+initial_capital = 1_000_000
+flatten_at_session_end = true
+slippage_bps = 1.0
+costs = { bps = 2.0 }
