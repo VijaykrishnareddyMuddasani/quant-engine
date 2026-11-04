@@ -1,0 +1,6 @@
+# Server clock in Asia/Kolkata. Install with: crontab deploy/crontab.example
+# m  h  dom mon dow  command
+# Start the book after the morning login, Monday to Friday (the guard handles holidays).
+50 8 * * 1-5  /opt/quant-engine/deploy/start_book.sh /opt/quant-engine/books/demo.toml
+# Remove stop / skip / takeover requests left over from earlier days.
+5  0 * * *    /opt/quant-engine/.venv/bin/python -c "from quant_engine.core import SystemClock; from quant_engine.ops import KillSwitch; KillSwitch('/opt/quant-engine/control', SystemClock()).sweep()"

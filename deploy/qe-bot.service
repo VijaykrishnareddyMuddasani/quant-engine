@@ -1,0 +1,20 @@
+# systemd unit for the Telegram control bot. It runs all the time; systemd restarts it if it dies.
+#   sudo cp deploy/qe-bot.service /etc/systemd/system/ && sudo systemctl enable --now qe-bot
+# Secrets live in /opt/quant-engine/.env (chmod 600), never in this file.
+
+[Unit]
+Description=quant-engine Telegram control bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=trader
+WorkingDirectory=/opt/quant-engine
+EnvironmentFile=/opt/quant-engine/.env
+ExecStart=/opt/quant-engine/.venv/bin/qe-bot
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

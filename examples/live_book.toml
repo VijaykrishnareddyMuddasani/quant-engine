@@ -1,0 +1,18 @@
+# A paper book running the textbook crossover on an index future.
+#   qe-live examples/live_book.toml           (paper: simulated fills at live Kite prices)
+# Real orders need --live on the command line; nothing in this file can turn it on.
+
+[book]
+name = "demo"
+symbol = "NFO:NIFTY-FUT"       # replace with the current contract's trading symbol
+instrument_token = 0           # and its instrument token, from the Kite instrument list
+bar_minutes = 15
+history_days = 2
+product = "MIS"
+backstop_pct = 1.5
+state_dir = "state"
+control_dir = "control"
+
+[strategy]
+spec = "quant_engine.strategy.examples:MovingAverageCrossover"
+params = { fast = 8, slow = 21, quantity = 75 }
